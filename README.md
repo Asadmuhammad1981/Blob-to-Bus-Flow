@@ -28,3 +28,51 @@ Perfect for learning serverless, event-driven patterns on Azure.
 Feel free to fork and extend — add Azure Functions, Logic Apps, or Power BI as consumers!
 
 #Azure #Terraform #EventDriven #Serverless #CloudNative
+
+High-Level Design (HLD) – Blob-to-Bus Flow Project
+This is a simple, fully serverless event-driven architecture on Azure that demonstrates real-world integration patterns using Infrastructure as Code (Terraform).
+Project Goal
+When a file (blob) is uploaded to an Azure Storage Account container → automatically send an event message to Azure Service Bus Topic → ready for downstream processing (e.g., Function App, Logic App, or another system).
+High-Level Architecture Diagram (Text Version)
+
++---------------------+          +---------------------------+
+|   Azure Storage     |          |     Event Grid (built-in) |
+|   Account           |  Blob    |     System Events         |
+|   (Container:       | Created  |  (BlobCreated trigger)    |
+|    uploads)         +--------->+---------------------------+
++---------------------+                   |
+                                          v
+                             +---------------------------+
+                             | Azure Event Grid          |
+                             | Event Subscription        |
+                             +---------------------------+
+                                          |
+                                          v
+                             +---------------------------+
+                             | Azure Service Bus         |
+                             | Namespace → Topic         |
+                             | → Subscription (for peek) |
+                             +---------------------------+
+                                          |
+                                          v (future extensions)
+                             +---------------------------+
+                             | Azure Function / Logic App|
+                             | (consume & process event) |
+                             +---------------------------+
+
+                             Key Components Created by Terraform
+
+Resource Group – Logical container
+Storage Account – Source of events
+Service Bus Namespace – Messaging backbone (Standard SKU for topics)
+Service Bus Topic – Receives events
+Service Bus Subscription – Allows peeking/testing messages
+Event Grid Subscription – Routes BlobCreated events directly to Service Bus Topic (no custom system topic needed)
+
+Data Flow
+
+User uploads file → uploads container in Storage Account
+Azure automatically emits Microsoft.Storage.BlobCreated event
+Event Grid Subscription captures it
+Message delivered to Service Bus Topic
+Visible instantly via Portal (Peek) or consumable by any subscriber
